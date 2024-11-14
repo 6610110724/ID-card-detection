@@ -6,7 +6,7 @@ import re
 pytesseract.pytesseract.tesseract_cmd = r"C:\Users\Pai\Desktop\TeamServay\tesseract_cmd\tesseract.exe"
 
 def capture_id_card():
-    cap = cv2.VideoCapture(1)
+    cap = cv2.VideoCapture(0)
     print("Press 'S' to save image or 'Q' to quit")
 
     while True:
@@ -34,18 +34,25 @@ def capture_id_card():
     cap.release()
     cv2.destroyAllWindows()
 
+
 def extract_text_from_image(image_path):
     img = cv2.imread(image_path)
     text = pytesseract.image_to_string(img, lang="tha+eng")
     return text
 
+
 def remove_extra_spaces(text):
+    text = text.replace("WIE)", "นาย")
+    text = text.replace("๑", "9")
+    text = text.replace("fle)", "ที่อยู่")
     return text.replace(" ", "")
+
 
 def save_data_to_text(text, filename="id_card_data.txt"):
     with open(filename, "w", encoding="utf-8") as file:
         file.write(text)
     print(f"Save {filename} successfully")
+
 
 def parse_data(text):
     data = {}
@@ -72,6 +79,7 @@ def parse_data(text):
     data["address"] = " ".join(address_match.groups()).replace("\n", " ").strip() if address_match else None
 
     return data
+
 
 def save_data_to_json(data, filename="id_card_data.json"):
     with open(filename, "w", encoding="utf-8") as file:
