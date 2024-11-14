@@ -37,45 +37,43 @@ def capture_id_card():
 
 def extract_text_from_image(image_path):
     img = cv2.imread(image_path)
-    text = pytesseract.image_to_string(img, lang="tha+eng")
-    return text
+    text_th = pytesseract.image_to_string(img, lang="tha")
+    text_eng = pytesseract.image_to_string(img, lang="eng")
+    return text_th, text_eng
 
 
-def remove_extra_spaces(text):
-    text = text.replace("WIE)", "นาย")
-    text = text.replace("๑", "9")
-    text = text.replace("fle)", "ที่อยู่")
-    return text.replace(" ", "")
+def remove_extra_spaces(text_th, text_eng):
+    return text_th.replace(" ", ""), text_eng.replace(" ", "")
 
 
-def save_data_to_text(text, filename="id_card_data.txt"):
+def save_data_to_text(text_th, text_eng, filename="id_card_data.txt"):
     with open(filename, "w", encoding="utf-8") as file:
-        file.write(text)
-    print(f"Save {filename} successfully")
+        file.write(text_th + "\n" + text_eng)
+    print(f"Saved {filename} successfully")
 
 
-def parse_data(text):
+def parse_data(text_th, text_eng): 
     data = {}
 
-    #ID_number
-    id_match = re.search(r"\s*([\d]{13})", text)
+    # ID_number 
+    id_match = re.search(r"\s*([\d]{13})", text_eng)
     data["ID_number"] = id_match.group(1) if id_match else None
 
-    #Fullname_TH
-    name_th_match = re.search(r"ชื่อตัวและชื่อสกุล\s*(.*?)(?:\n)", text)
+    # Fullname_TH
+    name_th_match = re.search(r"ชื่อตัวและชื่อสกุล\s*(.*?)(?:\n)", text_th)
     data["Fullname_TH"] = name_th_match.group(1).strip() if name_th_match else None
 
-    #Fullname_Eng
-    name_eng_match = re.search(r"Name\s*(.*?)(?:\n)", text)
-    lastname_eng_match = re.search(r"Lastname\s*(.*?)(?:\n)", text)
+    # Fullname_Eng 
+    name_eng_match = re.search(r"Name\s*(.*?)(?:\n)", text_eng)
+    lastname_eng_match = re.search(r"Lastname\s*(.*?)(?:\n)", text_eng)
 
-    if name_eng_match and lastname_eng_match :
+    if name_eng_match and lastname_eng_match:
         data["Fullname_Eng"] = f"{name_eng_match.group(1).strip()} {lastname_eng_match.group(1).strip()}"
     else:
         data["Fullname_Eng"] = None
 
-    # address
-    address_match = re.search(r"ที่อยู่\s*(.*\n.*)", text)
+    # Address
+    address_match = re.search(r"ที่อยู่\s*(.*\n.*)", text_th)
     data["address"] = " ".join(address_match.groups()).replace("\n", " ").strip() if address_match else None
 
     return data
@@ -98,12 +96,14 @@ if __name__ == "__main__":
         elif choice == 'i':
             image_num = input("Enter image number : ") 
             image_path = f"C:\\Users\\Pai\\Desktop\\TeamServay\\ID_card\\IDcard{image_num}.jpg"
-            print(f'scanning from ID card number {image_num}')
+            print(f'Scanning from ID card number {image_num}')
             break
 
-    extracted_data = extract_text_from_image(image_path)
-    extracted_data = remove_extra_spaces(extracted_data)
-    parsed_data = parse_data(extracted_data)
-    print("Data Extracted :\n",parsed_data)
+
+    text_th, text_eng = extract_text_from_image(image_path)
+    text_th, text_eng = remove_extra_spaces(text_th, text_eng)
+    parsed_data = parse_data(text_th, text_eng)
+
+    print("Data Extracted:\n", parsed_data)
     save_data_to_json(parsed_data)
-    save_data_to_text(extracted_data)
+    save_data_to_text(text_th, text_eng)
