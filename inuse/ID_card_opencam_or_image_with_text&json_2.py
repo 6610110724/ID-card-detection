@@ -3,7 +3,7 @@ import pytesseract
 import json
 import re
 
-pytesseract.pytesseract.tesseract_cmd = r"C:\Users\Pai\Desktop\TeamServay\tesseract_cmd\tesseract.exe"
+pytesseract.pytesseract.tesseract_cmd = r"C:\Users\Pai\Desktop\TeamServay\tesseract_cmd\tesseract.exe" #อย่าลืมเปลี่ยน Path file
 
 def capture_id_card():
     cap = cv2.VideoCapture(0)
@@ -35,11 +35,28 @@ def capture_id_card():
     cv2.destroyAllWindows()
 
 
+def apply_clahe(image_path):
+
+    img = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
+    assert img is not None, "Image could not be read. Please check the path."
+
+    clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
+    enhanced_img = clahe.apply(img)
+
+    cv2.imwrite("enhanced_image.jpg", enhanced_img)
+
+    return enhanced_img
+
+
 def extract_text_from_image(image_path):
-    img = cv2.imread(image_path)
-    text_th = pytesseract.image_to_string(img, lang="tha")
-    text_eng = pytesseract.image_to_string(img, lang="eng")
+    # Apply CLAHE enhancement
+    enhanced_img = apply_clahe(image_path)
+
+    # Use Tesseract OCR for text extraction
+    text_th = pytesseract.image_to_string(enhanced_img, lang="tha")
+    text_eng = pytesseract.image_to_string(enhanced_img, lang="eng")
     return text_th, text_eng
+
 
 
 def remove_extra_spaces(text_th, text_eng):
@@ -88,16 +105,11 @@ def save_data_to_json(data, filename="id_card_data.json"):
 if __name__ == "__main__":
     
     while True:
-        choice = input("Press 'c' to open camera or 'i' to choose image : ").lower()
-        if choice == 'c':
-            capture_id_card()
-            image_path = "id_card_for_cam.jpg"
-            break
-        elif choice == 'i':
-            image_num = input("Enter image number : ") 
-            image_path = f"C:\\Users\\Pai\\Desktop\\TeamServay\\ID_card\\IDcard{image_num}.jpg"
-            print(f'Scanning from ID card number {image_num}')
-            break
+
+        image_num = input("Enter image number : ") 
+        image_path = f"C:\\Users\\Pai\\Desktop\\TeamServay\\ID_card\\IDcard{image_num}.jpg"
+        print(f'Scanning from ID card number {image_num}')
+        break
 
 
     text_th, text_eng = extract_text_from_image(image_path)
@@ -107,3 +119,5 @@ if __name__ == "__main__":
     print("Data Extracted:\n", parsed_data)
     save_data_to_json(parsed_data)
     save_data_to_text(text_th, text_eng)
+
+
